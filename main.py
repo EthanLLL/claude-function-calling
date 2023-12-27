@@ -65,3 +65,8 @@ response_body = json.loads(response.get('body').read())
 completion = response_body.get('completion')
 print(completion)
 print(json.loads(completion))
+# {
+#   "tool": "get_current_location",
+#   "tool_input": {},
+#   "explanation": "Since the user did not provide a location, I will use the get_current_location tool to get their current location and pass that to the get_current_weather tool."
+# }
