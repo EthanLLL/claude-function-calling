@@ -14,7 +14,7 @@ You have access to the following tools:
             "properties": {
                 "location": {
                     "type": "string",
-                    "description": "The city and state, e.g. San Francisco, CA"
+                    "description": "The city or state which is required."
                 },
                 "unit": {
                     "type": "string",
@@ -29,24 +29,42 @@ You have access to the following tools:
     },
     {
         "name": "get_current_location",
-        "description": "Get the current location if user does not provide a valid location",
+        "description": "Use this tool to get the current location if user does not provide a location",
         "parameters": {
             "type": "object",
             "properties": {}
         }
     }
 ]
-You must always select one of the above tools and respond with only a JSON object matching the following schema inside a <json></json> tags:
+Select one of the above tools if needed and if tool needed, respond with only a JSON object matching the following schema.:
 {
-    "tool": <name of the selected tool>,
-    "tool_input": <parameters for the selected tool, matching the tool\'s JSON schema>,
+    "result": "tool_use",
+    "tool": <name of the selected tool, leave blank if no tools needed>,
+    "tool_input": <parameters for the selected tool, matching the tool\'s JSON schema, leave blank if no tools needed>,
     "explanation": <The explanation why you choosed this tool.>
 }
+If no further tools needed, response with only a JSON object matching the following schema:
+{
+    "result": "stop",
+    "content": <Your response to the user.>,
+    "explanation": <The explanation why you get the final answer.>
+}
 '''
-prompt = 'What is the current weather?' # LLM should response choose the get_current_location function with args: {}
+user_prompt = 'What is the current weather?' # LLM should response choose the get_current_location function with args: {}
+
+prompt_list = [
+    # Uncomment the chat message
+    f'\n\n{system_prompt}',
+    f'\n\nHuman: {user_prompt}',
+    '\n\nAssistant: Should use get_current_location tool with args: {}',
+    '\n\nHuman: I have used the get_current_location tool and the result is: Guangzhou',
+    '\n\nAssistant: Should use get_current_weather tool with args: {"location": "Guangzhou"}',
+    '\n\nHuman: I have used the get_current_weather tool and the result is: Rainy and 7 degrees.',
+    '\n\nAssistant: <json>' # Use <json> xml tag to force llm response json only
+]
 
 body = json.dumps({
-    'prompt': f'\n\n{system_prompt}\n\nHuman: {prompt}\n\nAssistant:<json>', # Use <json> xml tag to make llm response json only
+    'prompt': ''.join(prompt_list),    
     'max_tokens_to_sample': 300,
     'temperature': 0,
     'top_p': 0.9,
@@ -65,8 +83,3 @@ response_body = json.loads(response.get('body').read())
 completion = response_body.get('completion')
 print(completion)
 print(json.loads(completion))
-# {
-#   "tool": "get_current_location",
-#   "tool_input": {},
-#   "explanation": "Since the user did not provide a location, I will use the get_current_location tool to get their current location and pass that to the get_current_weather tool."
-# }
